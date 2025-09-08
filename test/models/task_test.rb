@@ -25,4 +25,25 @@ class TaskTest < ActiveSupport::TestCase
     assert_equal [[d.id, 0], [b.id, 1], [e.id, 2]],
                  Task.where(status: :done).order(:position).pluck(:id, :position)
   end
+
+  test "moves task within same status" do
+    a = Task.create!(title: "A", status: :todo)
+    b = Task.create!(title: "B", status: :todo)
+    c = Task.create!(title: "C", status: :todo)
+
+    c.update!(position: 1)
+
+    assert_equal [[a.id, 0], [c.id, 1], [b.id, 2]],
+                 Task.where(status: :todo).order(:position).pluck(:id, :position)
+  end
+
+  test "inserts task at given position on create" do
+    a = Task.create!(title: "A", status: :todo)
+    b = Task.create!(title: "B", status: :todo)
+
+    d = Task.create!(title: "D", status: :todo, position: 1)
+
+    assert_equal [[a.id, 0], [d.id, 1], [b.id, 2]],
+                 Task.where(status: :todo).order(:position).pluck(:id, :position)
+  end
 end
