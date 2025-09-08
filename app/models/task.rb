@@ -8,9 +8,15 @@ class Task < ApplicationRecord
   # use "todo" here too.
   enum :status, {
     todo:        "todo",
-    in_progress: "in_progress",
-    done:        "done"
+    done:        "done",
+    in_progress: "in_progress"
   }, default: :todo
+
+  STATUS_ORDER_SQL = statuses.keys.each_with_index.map { |s, i| "WHEN '#{s}' THEN #{i}" }.join(' ').freeze
+
+  scope :order_by_status_and_position, -> {
+    order(Arel.sql("CASE status #{STATUS_ORDER_SQL} END"), :position)
+  }
 
   before_validation :assign_position, on: :create
   before_update     :adjust_positions_on_status_change
