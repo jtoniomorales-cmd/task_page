@@ -137,7 +137,8 @@ export default function TasksApp() {
     setHoverIndex(idx);                // remember which index we’re over
   }
 
-  function handleDragLeave() {
+  function handleDragLeave(e) {
+    if (e.currentTarget.contains(e.relatedTarget)) return;
     setHoverCol(null);
     setHoverIndex(null);
   }
