@@ -40,3 +40,10 @@ node_modules
 # https://vitejs.dev/guide/env-and-mode.html#env-files
 *.local
 
+*.deb
+*.AppImage
+*.pkg
+*.dmg
+*.zip
+*.tar
+*.tar.gz
