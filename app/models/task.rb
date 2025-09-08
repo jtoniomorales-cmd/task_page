@@ -12,6 +12,19 @@ class Task < ApplicationRecord
     done:        "done"
   }, default: :todo
 
+  # Order tasks by the logical status progression defined in the enum
+  # rather than the default alphabetical order of the status column.
+  scope :ordered_by_status, lambda {
+    order(
+      Arel.sql(
+        "CASE status " +
+          statuses.keys.map.with_index { |s, i| "WHEN '#{s}' THEN #{i}" }.join(" ") +
+          " END"
+      ),
+      :position
+    )
+  }
+
   before_validation :assign_position, on: :create
   before_update     :push_to_end_if_column_changed
   before_update     :reorder_within_same_status

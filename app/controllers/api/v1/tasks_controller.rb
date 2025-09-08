@@ -2,7 +2,7 @@ class Api::V1::TasksController < ApplicationController
   before_action :set_task, only: [ :show, :update, :destroy ]
   rescue_from ActiveRecord::RecordNotFound, with: :not_found
   def index
-    @tasks = Task.order(:status, :position)
+    @tasks = Task.ordered_by_status
     render json: @tasks
   end
   def show
