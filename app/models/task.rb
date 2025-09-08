@@ -28,9 +28,17 @@ class Task < ApplicationRecord
   private
 
   def assign_position
-    return unless position.nil?
-    # ✅ use the setter
-    self.position = (Task.where(status: status).maximum(:position) || -1) + 1
+    max_pos = Task.where(status: status).maximum(:position) || -1
+
+    if position.nil? || position > max_pos + 1
+      # place at the end if no position supplied or out of range
+      self.position = max_pos + 1
+    else
+      # make room for the new task
+      Task.where(status: status)
+          .where("position >= ?", position)
+          .update_all("position = position + 1")
+    end
   end
 
   def adjust_positions_on_status_change
