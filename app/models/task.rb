@@ -13,7 +13,7 @@ class Task < ApplicationRecord
   }, default: :todo
 
   before_validation :assign_position, on: :create
-  before_update     :push_to_end_if_column_changed
+  before_update     :adjust_positions_on_status_change
   before_update     :reorder_within_same_status
 
   def send_creation_message; Rails.logger.info("after creation entered"); end
@@ -27,20 +27,31 @@ class Task < ApplicationRecord
     self.position = (Task.where(status: status).maximum(:position) || -1) + 1
   end
 
-  def push_to_end_if_column_changed
-    # Only if status changed AND client didn't send a position:
-    return unless will_save_change_to_status? && position.nil?
+  def adjust_positions_on_status_change
+    return unless will_save_change_to_status?
 
-    # ✅ use the setter
-    self.position = (Task.where(status: status).maximum(:position) || -1) + 1
-
-    # Optional: compact the old column (close the gap we left)
     old_status = status_before_last_save
     old_pos    = position_before_last_save
-    if old_status.present? && !old_pos.nil?
-      Task.where(status: old_status)
-          .where("position > ?", old_pos)
-          .update_all("position = position - 1")
+    new_pos    = position
+
+    Task.transaction do
+      # default to end if no position supplied
+      if new_pos.nil?
+        self.position = (Task.where(status: status).maximum(:position) || -1) + 1
+        new_pos = position
+      else
+        # make room in the new column
+        Task.where(status: status)
+            .where("position >= ?", new_pos)
+            .update_all("position = position + 1")
+      end
+
+      # compact the old column (close the gap we left)
+      if old_status.present? && !old_pos.nil?
+        Task.where(status: old_status)
+            .where("position > ?", old_pos)
+            .update_all("position = position - 1")
+      end
     end
   end
 
